@@ -4,6 +4,7 @@ import os
 import json
 import pandas as pd
 import dash
+from dash.dependencies import Input, Output
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
@@ -69,35 +70,58 @@ APP.layout = html.Div(
         dcc.Markdown(children=MARKDOWN_TEXT),
 
         dcc.Graph(
-            id='TODO',
-            figure={
-                'data': [
-                    go.Scatter(
-                        x=DF[DF['type'] == i]['descendants'],
-                        y=DF[DF['type'] == i]['score'],
-                        text=DF[DF['type'] == i]['title'],
-                        mode='markers',
-                        opacity=0.7,
-                        marker={
-                            'size': 15,
-                            'line': {'width': 0.5, 'color': 'white'},
-                        },
-                        name=i,
-                    ) for i in DF.type.unique()
-                ],
-                'layout': go.Layout(
-                    xaxis={'type': 'log', 'title': 'Comments'},
-                    yaxis={'title': 'Votes'},
-                    margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
-                    showlegend=True,
-                    legend={'x': 0, 'y': 1},
-                    hovermode='closest',
-                )
-            }
+            id='scatter-stories',
         ),
 
+        dcc.Slider(
+            id='slider-year',
+            min=DF['year'].min(),
+            max=DF['year'].max(),
+            value=DF['year'].max(),
+            marks={str(year): str(year) for year in DF['year'].unique()},
+        ),
     ]
 )
+
+
+@APP.callback(
+    Output(component_id='scatter-stories', component_property='figure'),
+    [Input(component_id='slider-year', component_property='value')]
+    )
+def update_stories(selected_year):
+    """
+    update_stories
+    """
+    filtered_df = DF[DF.year == selected_year]
+
+    traces = []
+    for i in filtered_df.type.unique():
+        df_by_type = filtered_df[filtered_df['type'] == i]
+        traces.append(go.Scatter(
+            x=df_by_type['descendants'],
+            y=df_by_type['score'],
+            text=df_by_type['title'],
+            mode='markers',
+            opacity=0.7,
+            marker={
+                'size': 15,
+                'line': {'width': 0.5, 'color': 'white'},
+                },
+            name=i,
+        ))
+
+    return {
+        'data': traces,
+        'layout': go.Layout(
+            xaxis={'type': 'log', 'title': 'Comments'},
+            yaxis={'title': 'Votes'},
+            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
+            showlegend=True,
+            legend={'x': 0, 'y': 1},
+            hovermode='closest',
+            )
+        }
+
 
 if __name__ == '__main__':
     APP.run_server(debug=True, port=4200)
