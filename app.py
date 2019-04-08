@@ -64,7 +64,11 @@ Jukka-Pekka Salo
 '''
 
 APP.layout = html.Div(
-    style={'backgroundColor': COLORS['background']},
+    style={
+        'marginLeft': '1em',
+        'marginRight': '1em',
+        'backgroundColor': COLORS['background'],
+    },
     children=[
 
         dcc.Markdown(children=MARKDOWN_TEXT),
