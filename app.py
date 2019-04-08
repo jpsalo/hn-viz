@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import pandas as pd
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -21,19 +22,26 @@ CLIENT = bigquery.Client(
     project='hacker-news-visualization',
     credentials=CREDENTIALS)
 
-# Using WHERE reduces the amount of data scanned / quota used
-SQL = """
-SELECT title, score
-FROM `bigquery-public-data.hacker_news.stories`
-WHERE
-  NOT (score IS NULL)
-ORDER BY score DESC
-LIMIT 10
-"""
+# https://stackoverflow.com/q/53177427/7010222
+# https://cloud.google.com/bigquery/docs/reference/rest/v2/jobs#configuration.query.useQueryCache
+JOB_CONFIG = bigquery.QueryJobConfig()
+JOB_CONFIG.use_query_cache = True
 
-DF = CLIENT.query(SQL).to_dataframe()
+FD = open('query.sql', 'r')
+SQL = FD.read()
+FD.close()
 
-DF = DF.head()
+print('gathering data')
+QUERY_JOB = CLIENT.query(SQL, job_config=JOB_CONFIG)
+print('running', QUERY_JOB.running())
+print('done', QUERY_JOB.done())
+print('cache', QUERY_JOB.cache_hit)
+
+print('loading DataFrame')
+DF = QUERY_JOB.to_dataframe()
+
+pd.set_option('display.max_rows', 11)
+print(DF)
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -64,17 +72,28 @@ APP.layout = html.Div(
             id='TODO',
             figure={
                 'data': [
-                    go.Bar(
-                        x=DF['title'],
-                        y=DF['score'],
-                        name='TODO',
-                    ),
+                    go.Scatter(
+                        x=DF[DF['type'] == i]['descendants'],
+                        y=DF[DF['type'] == i]['score'],
+                        text=DF[DF['type'] == i]['title'],
+                        mode='markers',
+                        opacity=0.7,
+                        marker={
+                            'size': 15,
+                            'line': {'width': 0.5, 'color': 'white'},
+                        },
+                        name=i,
+                    ) for i in DF.type.unique()
                 ],
                 'layout': go.Layout(
-                    title='TODO',
+                    xaxis={'type': 'log', 'title': 'Comments'},
+                    yaxis={'title': 'Votes'},
+                    margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
                     showlegend=True,
+                    legend={'x': 0, 'y': 1},
+                    hovermode='closest',
                 )
-            },
+            }
         ),
 
     ]
