@@ -1,12 +1,9 @@
-/*
-Using WHERE reduces the amount of data scanned / quota used
-*/
 SELECT
   uni.score,
   uni.descendants,
   EXTRACT(YEAR
   FROM
-    DATE(uni.time_ts)) AS year,
+    DATE(uni.timestamp)) AS year,
   uni.title,
   CASE
     WHEN STRPOS(uni.title, "Ask HN: ") > 0 THEN CASE
@@ -20,21 +17,23 @@ FROM ((
     SELECT
       stories.score AS score,
       stories.descendants AS descendants,
-      stories.time_ts AS time_ts,
-      stories.author AS author,
+      stories.timestamp AS timestamp,
+      stories.BY AS author,
       stories.title AS title
     FROM (
       SELECT
         stories.score,
         stories.descendants,
         stories.title,
-        stories.author,
-        stories.time_ts,
-        ROW_NUMBER() OVER(PARTITION BY EXTRACT(YEAR FROM DATE(stories.time_ts))
+        stories.BY,
+        stories.timestamp,
+        ROW_NUMBER() OVER(PARTITION BY EXTRACT(YEAR FROM DATE(stories.timestamp))
         ORDER BY
           stories.score DESC) AS rn
       FROM
-        `bigquery-public-data.hacker_news.stories` AS stories ) AS stories
+        `bigquery-public-data.hacker_news.full` AS stories
+      WHERE
+        stories.type = 'story') AS stories
     WHERE
       stories.rn <= 100
       AND NOT (stories.score IS NULL
@@ -43,21 +42,23 @@ FROM ((
     SELECT
       stories.score AS score,
       stories.descendants AS descendants,
-      stories.time_ts AS time_ts,
-      stories.author AS author,
+      stories.timestamp AS timestamp,
+      stories.BY AS author,
       stories.title AS title
     FROM (
       SELECT
         stories.score,
         stories.descendants,
         stories.title,
-        stories.author,
-        stories.time_ts,
-        ROW_NUMBER() OVER(PARTITION BY EXTRACT(YEAR FROM DATE(stories.time_ts))
+        stories.BY,
+        stories.timestamp,
+        ROW_NUMBER() OVER(PARTITION BY EXTRACT(YEAR FROM DATE(stories.timestamp))
         ORDER BY
           stories.descendants DESC) AS rn
       FROM
-        `bigquery-public-data.hacker_news.stories` AS stories ) AS stories
+        `bigquery-public-data.hacker_news.full` AS stories
+      WHERE
+        stories.type = 'story') AS stories
     WHERE
       stories.rn <= 100
       AND NOT (stories.descendants IS NULL
