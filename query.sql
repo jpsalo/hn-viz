@@ -4,7 +4,9 @@ Using WHERE reduces the amount of data scanned / quota used
 SELECT
   uni.score,
   uni.descendants,
-  uni.year,
+  EXTRACT(YEAR
+  FROM
+    DATE(uni.time_ts)) AS year,
   uni.title,
   CASE
     WHEN STRPOS(uni.title, "Ask HN: ") > 0 THEN CASE
@@ -18,7 +20,7 @@ FROM ((
     SELECT
       stories.score AS score,
       stories.descendants AS descendants,
-      stories.year AS year,
+      stories.time_ts AS time_ts,
       stories.author AS author,
       stories.title AS title
     FROM (
@@ -27,9 +29,7 @@ FROM ((
         stories.descendants,
         stories.title,
         stories.author,
-        EXTRACT(YEAR
-        FROM
-          DATE(stories.time_ts)) AS year,
+        stories.time_ts,
         ROW_NUMBER() OVER(PARTITION BY EXTRACT(YEAR FROM DATE(stories.time_ts))
         ORDER BY
           stories.score DESC) AS rn
@@ -43,7 +43,7 @@ FROM ((
     SELECT
       stories.score AS score,
       stories.descendants AS descendants,
-      stories.year AS year,
+      stories.time_ts AS time_ts,
       stories.author AS author,
       stories.title AS title
     FROM (
@@ -52,9 +52,7 @@ FROM ((
         stories.descendants,
         stories.title,
         stories.author,
-        EXTRACT(YEAR
-        FROM
-          DATE(stories.time_ts)) AS year,
+        stories.time_ts,
         ROW_NUMBER() OVER(PARTITION BY EXTRACT(YEAR FROM DATE(stories.time_ts))
         ORDER BY
           stories.descendants DESC) AS rn
@@ -65,5 +63,5 @@ FROM ((
       AND NOT (stories.descendants IS NULL
         OR stories.descendants <= 0))) AS uni
 ORDER BY
-  uni.year DESC,
-  uni.descendants DESC
+  year DESC,
+  descendants DESC
