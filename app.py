@@ -109,7 +109,11 @@ def update_stories(selected_year):
             mode='markers',
             opacity=0.7,
             marker={
-                'size': 15,
+                'size': df_by_type['days'],
+                # https://plot.ly/python/bubble-charts/#scaling-the-size-of-bubble-charts
+                'sizeref': 2.*max(df_by_type['days'])/(25.**2),
+                'sizemode': 'area',
+                'sizemin': 5,
                 'line': {'width': 0.5, 'color': 'white'},
                 },
             name=i,
