@@ -43,6 +43,7 @@ DF = QUERY_JOB.to_dataframe()
 
 pd.set_option('display.max_rows', 11)
 print(DF)
+print('memory usage', DF.info(memory_usage='deep'))
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
