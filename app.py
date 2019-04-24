@@ -11,6 +11,7 @@ import dash_html_components as html
 import plotly.graph_objs as go
 from google.cloud import bigquery
 from google.oauth2 import service_account
+from settings import DASH_ENV
 
 # https://simpleit.rocks/apis/google-cloud/using-google-cloud-with-heroku/#in-heroku
 CREDENTIALS_RAW = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
@@ -203,4 +204,5 @@ def update_monthly_stories(click_data):
 
 
 if __name__ == '__main__':
-    APP.run_server(debug=True, port=4200)
+    DEBUG = True if DASH_ENV == 'development' else False
+    APP.run_server(debug=DEBUG, port=4200)
