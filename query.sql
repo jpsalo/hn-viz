@@ -44,7 +44,9 @@ WITH
       WHERE
         stories.rn <= 100
         AND NOT (stories.score IS NULL
-          OR stories.score <= 0))
+          OR stories.score <= 0
+          OR stories.descendants IS NULL
+          OR stories.descendants <= 0 ))
     UNION DISTINCT (
       SELECT
         stories.id AS id,
@@ -71,7 +73,9 @@ WITH
       WHERE
         stories.rn <= 100
         AND NOT (stories.descendants IS NULL
-          OR stories.descendants <= 0))) AS uni
+          OR stories.descendants <= 0
+          OR stories.score IS NULL
+          OR stories.score <= 0 ))) AS uni
   ORDER BY
     year DESC,
     descendants DESC ),
