@@ -5,6 +5,8 @@ WITH
     uni.title,
     uni.score,
     uni.descendants,
+    uni.author,
+    uni.timestamp,
     EXTRACT(YEAR
     FROM
       DATE(uni.timestamp)) AS year,
@@ -76,11 +78,13 @@ WITH
   sub_threads AS (
   SELECT
     MAX(sub_stories.title) AS title,
+    MAX(sub_stories.author) AS author,
     MAX(sub_stories.type) AS type,
     MAX(sub_stories.score) AS score,
     MAX(sub_stories.descendants) AS descendants,
     COUNT(DISTINCT CAST(comments.timestamp AS DATE)) AS days,
     MAX(sub_stories.year) AS year,
+    MAX(sub_stories.timestamp) AS timestamp,
     comments.parent AS threadId
   FROM
     `bigquery-public-data.hacker_news.full` AS comments
@@ -95,11 +99,13 @@ WITH
     comments.parent )
 SELECT
   sub_threads.title,
+  sub_threads.author,
   sub_threads.type,
   sub_threads.score,
   sub_threads.descendants,
   sub_threads.days,
   sub_threads.year,
+  sub_threads.timestamp,
   sub_threads.threadId
 FROM
   sub_threads

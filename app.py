@@ -1,5 +1,6 @@
 """module"""
 # -*- coding: utf-8 -*-
+from datetime import datetime
 import os
 import json
 import pandas as pd
@@ -71,19 +72,25 @@ APP.layout = html.Div(
         'backgroundColor': COLORS['background'],
     },
     children=[
-
         dcc.Markdown(children=MARKDOWN_TEXT),
-
-        dcc.Graph(
-            id='scatter-stories',
+        html.Div(
+            style={'padding': 10},
+            children=[
+                dcc.Graph(id='scatter-stories'),
+                dcc.Slider(
+                    id='slider-year',
+                    min=DF['year'].min(),
+                    max=DF['year'].max(),
+                    value=DF['year'].max(),
+                    marks={
+                        str(year): str(year) for year in DF['year'].unique()
+                    },
+                ),
+            ],
         ),
-
-        dcc.Slider(
-            id='slider-year',
-            min=DF['year'].min(),
-            max=DF['year'].max(),
-            value=DF['year'].max(),
-            marks={str(year): str(year) for year in DF['year'].unique()},
+        html.Div(
+            style={'padding': 10},
+            children=[dcc.Graph(id='bar-chart-monthly')],
         ),
     ]
 )
@@ -91,13 +98,12 @@ APP.layout = html.Div(
 
 @APP.callback(
     Output(component_id='scatter-stories', component_property='figure'),
-    [Input(component_id='slider-year', component_property='value')]
-    )
+    [Input(component_id='slider-year', component_property='value')])
 def update_stories(selected_year):
     """
     update_stories
     """
-    filtered_df = DF[DF.year == selected_year]
+    filtered_df = DF[DF['year'] == selected_year]
 
     traces = []
     for i in filtered_df.type.unique():
@@ -106,6 +112,7 @@ def update_stories(selected_year):
             x=df_by_type['descendants'],
             y=df_by_type['score'],
             text=df_by_type['title'],
+            customdata=df_by_type['threadId'],
             mode='markers',
             opacity=0.7,
             marker={
@@ -124,12 +131,75 @@ def update_stories(selected_year):
         'layout': go.Layout(
             xaxis={'type': 'log', 'title': 'Comments'},
             yaxis={'title': 'Votes'},
+            # FIXME
             margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             showlegend=True,
+            clickmode='event+select',
             legend={'x': 0, 'y': 1},
             hovermode='closest',
             )
         }
+
+
+def create_bar_chart(df_by_year_month, year, month, thread_id):
+    """
+    create_bar_chart
+    """
+    num_rows = len(df_by_year_month.index)
+    colors = ['rgb(49,130,189)'] * num_rows
+
+    if thread_id is not None:
+        thread_index = df_by_year_month['threadId'].tolist().index(thread_id)
+        for i, color in enumerate(colors):
+            if i == thread_index:
+                colors[i] = 'rgba(222,45,38,0.8)'
+
+    return {
+        'data': [go.Bar(
+            x=df_by_year_month['title'],
+            y=df_by_year_month['score'],
+            marker={
+                'color': colors,
+                },
+            )],
+        'layout': go.Layout(
+            title={
+                'text': f'Stats for {year}/{month}',
+                },
+            yaxis={'title': 'Votes'},
+            hovermode='closest',
+            # FIXME
+            margin={'l': 150, 'r': 150, 'b': 100, 't': 100, 'pad': 4},
+            ),
+        }
+
+
+@APP.callback(
+    Output('bar-chart-monthly', 'figure'),
+    [Input('scatter-stories', 'clickData')])
+def update_monthly_stories(click_data):
+    """
+    update_monthly_stories
+    """
+    if click_data is None:
+        # Optimistic defaults
+        thread_id = None
+        today = datetime.today()
+        year = today.year
+        month = today.month
+    else:
+        thread_id = click_data['points'][0]['customdata']
+        thread = DF.loc[DF['threadId'] == thread_id]
+        timestamp = thread.iloc[0]['timestamp']
+        year = timestamp.year
+        month = timestamp.month
+
+    df_by_year_month = DF[
+        (DF['year'] == year) &
+        (pd.to_datetime(DF['timestamp']).dt.month == month)
+    ].sort_values('score', ascending=False)
+
+    return create_bar_chart(df_by_year_month, year, month, thread_id)
 
 
 if __name__ == '__main__':
