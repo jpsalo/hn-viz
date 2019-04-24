@@ -44,7 +44,16 @@ print('loading DataFrame')
 DF = QUERY_JOB.to_dataframe()
 
 pd.set_option('display.max_rows', 11)
-print(DF)
+print(DF[[
+    'title',
+    'author',
+    'type',
+    'score',
+    'descendants',
+    'days',
+    'year',
+    'threadId',
+]])
 print('memory usage', DF.info(memory_usage='deep'))
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
