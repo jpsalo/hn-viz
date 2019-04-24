@@ -3,6 +3,7 @@
 from datetime import datetime
 import os
 import json
+import numpy as np
 import pandas as pd
 import dash
 from dash.dependencies import Input, Output
@@ -118,6 +119,9 @@ def update_stories(selected_year):
     traces = []
     for i in filtered_df.type.unique():
         df_by_type = filtered_df[filtered_df['type'] == i]
+        size = df_by_type['days']/np.log(df_by_type['descendants'])
+        sizeref = 2.*max(size)/(20.**2)
+
         traces.append(go.Scatter(
             x=df_by_type['descendants'],
             y=df_by_type['score'],
@@ -126,9 +130,9 @@ def update_stories(selected_year):
             mode='markers',
             opacity=0.7,
             marker={
-                'size': df_by_type['days'],
+                'size': size,
                 # https://plot.ly/python/bubble-charts/#scaling-the-size-of-bubble-charts
-                'sizeref': 2.*max(df_by_type['days'])/(25.**2),
+                'sizeref': sizeref,
                 'sizemode': 'area',
                 'sizemin': 5,
                 'line': {'width': 0.5, 'color': 'white'},
