@@ -11,6 +11,8 @@ dash-html-components==0.15.0
 dash-renderer==0.21.0
 dash-table==3.6.0
 decorator==4.4.0
+entrypoints==0.3
+flake8==3.7.7
 Flask==1.0.2
 Flask-Compress==1.4.0
 google-api-core==1.8.2
@@ -31,6 +33,7 @@ Jinja2==2.10
 jsonschema==3.0.1
 jupyter-core==4.4.0
 MarkupSafe==1.1.1
+mccabe==0.6.1
 nbformat==4.4.0
 numpy==1.16.2
 pandas==0.24.2
@@ -38,8 +41,11 @@ plotly==3.7.1
 protobuf==3.7.1
 pyasn1==0.4.5
 pyasn1-modules==0.2.4
+pycodestyle==2.5.0
+pyflakes==2.1.1
 pyrsistent==0.14.11
 python-dateutil==2.8.0
+python-dotenv==0.10.1
 python-gflags==3.1.2
 pytz==2018.9
 requests==2.21.0
