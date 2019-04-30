@@ -180,10 +180,9 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
             title={
                 'text': f'Stats for {year}/{month}',
                 },
+            xaxis={'automargin': True},
             yaxis={'title': 'Votes'},
             hovermode='closest',
-            # FIXME
-            margin={'l': 150, 'r': 150, 'b': 100, 't': 100, 'pad': 4},
             ),
         }
 
