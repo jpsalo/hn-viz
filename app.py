@@ -117,8 +117,11 @@ APP.layout = html.Div(
 
 @APP.callback(
     Output(component_id='scatter-stories', component_property='figure'),
-    [Input(component_id='slider-year', component_property='value')])
-def update_stories(selected_year):
+    [
+        Input(component_id='slider-year', component_property='value'),
+        Input('bar-chart-monthly', 'selectedData'),
+    ])
+def update_stories(selected_year, selected_data):
     """
     update_stories
     """
@@ -130,11 +133,22 @@ def update_stories(selected_year):
         size = df_by_type['days']/np.log(df_by_type['descendants'])
         sizeref = 2.*max(size)/(20.**2)
 
+        selected_points = []
+        if selected_data is not None:
+            thread_id = selected_data['points'][0]['customdata']
+            thread = DF.loc[DF['threadId'] == thread_id]
+            thread_type = thread.iloc[0]['type']
+            thread_year = thread.iloc[0]['year']
+            if thread_type == i and thread_year == selected_year:
+                thread_index = df_by_type['threadId'].tolist().index(thread_id)
+                selected_points.append(thread_index)
+
         traces.append(go.Scatter(
             x=df_by_type['descendants'],
             y=df_by_type['score'],
             text=df_by_type['title'],
             customdata=df_by_type['threadId'],
+            selectedpoints=selected_points,
             mode='markers',
             opacity=0.7,
             marker={
@@ -167,17 +181,18 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
     """
     create_bar_chart
     """
-    selectedpoints = []
+    selected_points = []
 
     if thread_id is not None:
         thread_index = df_by_year_month['threadId'].tolist().index(thread_id)
-        selectedpoints.append(thread_index)
+        selected_points.append(thread_index)
 
     return {
         'data': [go.Bar(
             x=df_by_year_month['title'],
             y=df_by_year_month['score'],
-            selectedpoints=selectedpoints,
+            customdata=df_by_year_month['threadId'],
+            selectedpoints=selected_points,
         )],
         'layout': go.Layout(
             title={
@@ -186,29 +201,63 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
             xaxis={'automargin': True},
             yaxis={'title': 'Votes'},
             hovermode='closest',
+            clickmode='event+select',
             ),
         }
 
 
 @APP.callback(
     Output('bar-chart-monthly', 'figure'),
-    [Input('scatter-stories', 'selectedData')])
-def update_monthly_stories(selected_data):
+    [
+        Input('scatter-stories', 'selectedData'),
+        Input(component_id='slider-year', component_property='value'),
+        Input('scatter-stories', 'clickData'),
+    ])
+def update_monthly_stories(selected_data, selected_year, click_data):
     """
     update_monthly_stories
     """
-    if selected_data is None:
-        # Optimistic defaults
+
+    # Change year
+    if selected_data is None and click_data is None:
         thread_id = None
         today = datetime.today()
-        year = today.year
-        month = today.month
-    else:
+        current_year = today.year
+        current_month = today.month
+        year = selected_year
+        month = current_month if selected_year == current_year else 1
+
+    # Select
+    if selected_data is not None:
         thread_id = selected_data['points'][0]['customdata']
         thread = DF.loc[DF['threadId'] == thread_id]
         timestamp = thread.iloc[0]['timestamp']
         year = timestamp.year
         month = timestamp.month
+
+        if timestamp.year != selected_year:
+            thread_id = None
+            today = datetime.today()
+            current_year = today.year
+            current_month = today.month
+            year = selected_year
+            month = current_month if selected_year == current_year else 1
+
+    # Unselect
+    if selected_data is None and click_data is not None:
+        thread_id = None
+        previous_thread_id = click_data['points'][0]['customdata']
+        thread = DF.loc[DF['threadId'] == previous_thread_id]
+        timestamp = thread.iloc[0]['timestamp']
+        year = timestamp.year
+        month = timestamp.month
+
+        if timestamp.year != selected_year:
+            today = datetime.today()
+            current_year = today.year
+            current_month = today.month
+            year = selected_year
+            month = current_month if selected_year == current_year else 1
 
     df_by_year_month = DF[
         (DF['year'] == year) &
