@@ -189,19 +189,19 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
 
 @APP.callback(
     Output('bar-chart-monthly', 'figure'),
-    [Input('scatter-stories', 'clickData')])
-def update_monthly_stories(click_data):
+    [Input('scatter-stories', 'selectedData')])
+def update_monthly_stories(selected_data):
     """
     update_monthly_stories
     """
-    if click_data is None:
+    if selected_data is None:
         # Optimistic defaults
         thread_id = None
         today = datetime.today()
         year = today.year
         month = today.month
     else:
-        thread_id = click_data['points'][0]['customdata']
+        thread_id = selected_data['points'][0]['customdata']
         thread = DF.loc[DF['threadId'] == thread_id]
         timestamp = thread.iloc[0]['timestamp']
         year = timestamp.year
