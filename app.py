@@ -167,23 +167,18 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
     """
     create_bar_chart
     """
-    num_rows = len(df_by_year_month.index)
-    colors = ['rgb(49,130,189)'] * num_rows
+    selectedpoints = []
 
     if thread_id is not None:
         thread_index = df_by_year_month['threadId'].tolist().index(thread_id)
-        for i, color in enumerate(colors):
-            if i == thread_index:
-                colors[i] = 'rgba(222,45,38,0.8)'
+        selectedpoints.append(thread_index)
 
     return {
         'data': [go.Bar(
             x=df_by_year_month['title'],
             y=df_by_year_month['score'],
-            marker={
-                'color': colors,
-                },
-            )],
+            selectedpoints=selectedpoints,
+        )],
         'layout': go.Layout(
             title={
                 'text': f'Stats for {year}/{month}',
