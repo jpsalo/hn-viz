@@ -87,7 +87,10 @@ APP.layout = html.Div(
         html.Div(
             style={'padding': 10},
             children=[
-                dcc.Graph(id='scatter-stories'),
+                dcc.Graph(
+                    id='scatter-stories',
+                    config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
+                ),
                 dcc.Slider(
                     id='slider-year',
                     min=DF['year'].min(),
@@ -101,7 +104,12 @@ APP.layout = html.Div(
         ),
         html.Div(
             style={'padding': 10},
-            children=[dcc.Graph(id='bar-chart-monthly')],
+            children=[
+                dcc.Graph(
+                    id='bar-chart-monthly',
+                    config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
+                )
+            ],
         ),
     ]
 )
