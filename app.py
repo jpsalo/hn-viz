@@ -142,6 +142,7 @@ def update_stories(selected_year, selected_data):
         df_by_type = filtered_df[filtered_df['type'] == i]
         size = df_by_type['days']/np.log(df_by_type['descendants'])
         sizeref = 2.*max(size)/(20.**2)
+        # Clear selected points per type
         selected_points = None
 
         if selected_data is not None and is_year_select is False:
@@ -151,11 +152,13 @@ def update_stories(selected_year, selected_data):
             thread_year = thread.iloc[0]['year']
 
             if thread_year == selected_year:
+                # Set everything unselected
                 selected_points = []
 
                 if thread_type == i and thread_year == selected_year:
                     thread_index = df_by_type['threadId'].tolist().index(
                         thread_id)
+                    # Select
                     selected_points.append(thread_index)
 
         traces.append(go.Scatter(
@@ -232,9 +235,16 @@ def update_monthly_stories(selected_data, selected_year, click_data):
     """
     update_monthly_stories
     """
+    is_year_select = False
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if input_id == SLIDER_YEAR_ID:
+            is_year_select = True
 
     # Change year
-    if selected_data is None and click_data is None:
+    if is_year_select:
         thread_id = None
         today = datetime.today()
         current_year = today.year
@@ -242,37 +252,22 @@ def update_monthly_stories(selected_data, selected_year, click_data):
         year = selected_year
         month = current_month if selected_year == current_year else 1
 
-    # Select
-    if selected_data is not None:
+    # Select (and change to year/month)
+    elif selected_data is not None:
         thread_id = selected_data['points'][0]['customdata']
         thread = DF.loc[DF['threadId'] == thread_id]
         timestamp = thread.iloc[0]['timestamp']
         year = timestamp.year
         month = timestamp.month
 
-        if timestamp.year != selected_year:
-            thread_id = None
-            today = datetime.today()
-            current_year = today.year
-            current_month = today.month
-            year = selected_year
-            month = current_month if selected_year == current_year else 1
-
-    # Unselect
-    if selected_data is None and click_data is not None:
+    # Unselect (but keep year/month)
+    elif selected_data is None and click_data is not None:
         thread_id = None
         previous_thread_id = click_data['points'][0]['customdata']
         thread = DF.loc[DF['threadId'] == previous_thread_id]
         timestamp = thread.iloc[0]['timestamp']
         year = timestamp.year
         month = timestamp.month
-
-        if timestamp.year != selected_year:
-            today = datetime.today()
-            current_year = today.year
-            current_month = today.month
-            year = selected_year
-            month = current_month if selected_year == current_year else 1
 
     df_by_year_month = DF[
         (DF['year'] == year) &
