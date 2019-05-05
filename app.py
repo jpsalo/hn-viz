@@ -108,9 +108,9 @@ APP.layout = html.Div(
             style={'padding': 10},
             children=[
                 dcc.Graph(
-                    id='bar-chart-monthly',
+                    id='bar-chart-monthly-votes',
                     config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
-                )
+                ),
             ],
         ),
     ]
@@ -121,7 +121,7 @@ APP.layout = html.Div(
     Output(component_id='scatter-stories', component_property='figure'),
     [
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
-        Input('bar-chart-monthly', 'selectedData'),
+        Input('bar-chart-monthly-votes', 'selectedData'),
     ])
 def update_stories(selected_year, selected_data):
     """
@@ -225,7 +225,7 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
 
 
 @APP.callback(
-    Output('bar-chart-monthly', 'figure'),
+    Output('bar-chart-monthly-votes', 'figure'),
     [
         Input('scatter-stories', 'selectedData'),
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
