@@ -113,6 +113,8 @@ APP.layout = html.Div(
                 ),
             ],
         ),
+        # Hidden div inside the app that stores the intermediate value
+        html.Div(id='intermediate-value', style={'display': 'none'}),
     ]
 )
 
@@ -225,7 +227,7 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
 
 
 @APP.callback(
-    Output('bar-chart-monthly-votes', 'figure'),
+    Output('intermediate-value', 'children'),
     [
         Input('scatter-stories', 'selectedData'),
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
@@ -274,6 +276,25 @@ def update_monthly_stories(selected_data, selected_year, click_data):
         (pd.to_datetime(DF['timestamp']).dt.month == month)
     ].sort_values('score', ascending=False)
 
+    state = {'year': year, 'month': month, 'thread_id': thread_id}
+    df_json = df_by_year_month.to_json(date_format='iso', orient='split')
+    intermediate_data = [df_json, state]
+    return json.dumps(intermediate_data)
+
+
+@APP.callback(
+    Output('bar-chart-monthly-votes', 'figure'),
+    [Input('intermediate-value', 'children')])
+def update_monthly_stories_votes(intermediate_data_json):
+    """
+    update_monthly_stories_votes
+    """
+    intermediate_data = json.loads(intermediate_data_json)
+    df_by_year_month = pd.read_json(intermediate_data[0], orient='split')
+    state = intermediate_data[1]
+    year = state['year']
+    month = state['month']
+    thread_id = state['thread_id']
     return create_bar_chart(df_by_year_month, year, month, thread_id)
 
 
