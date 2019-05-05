@@ -138,12 +138,18 @@ def update_stories(selected_year, selected_data_votes, selected_data_comments):
     update_stories
     """
     is_year_select = False
+    is_votes_select = False
+    is_comments_select = False
     ctx = dash.callback_context
 
     if ctx.triggered:
         input_id = ctx.triggered[0]['prop_id'].split('.')[0]
         if input_id == SLIDER_YEAR_ID:
             is_year_select = True
+        elif input_id == BAR_CHART_MONTHLY_VOTES_ID:
+            is_votes_select = True
+        elif input_id == BAR_CHART_MONTHLY_COMMENTS_ID:
+            is_comments_select = True
 
     filtered_df = DF[DF['year'] == selected_year]
 
@@ -157,9 +163,9 @@ def update_stories(selected_year, selected_data_votes, selected_data_comments):
         thread_id = None
 
         if is_year_select is False:
-            if selected_data_votes is not None:
+            if is_votes_select and selected_data_votes is not None:
                 thread_id = selected_data_votes['points'][0]['customdata']
-            elif selected_data_comments is not None:
+            elif is_comments_select and selected_data_comments is not None:
                 thread_id = selected_data_comments['points'][0]['customdata']
 
             if thread_id is not None:
