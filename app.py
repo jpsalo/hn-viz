@@ -59,6 +59,8 @@ print('memory usage', DF.info(memory_usage='deep'))
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+SLIDER_YEAR_ID = 'slider-year'
+
 APP = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 
 SERVER = APP.server
@@ -92,7 +94,7 @@ APP.layout = html.Div(
                     config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
                 ),
                 dcc.Slider(
-                    id='slider-year',
+                    id=SLIDER_YEAR_ID,
                     min=DF['year'].min(),
                     max=DF['year'].max(),
                     value=DF['year'].max(),
@@ -118,13 +120,21 @@ APP.layout = html.Div(
 @APP.callback(
     Output(component_id='scatter-stories', component_property='figure'),
     [
-        Input(component_id='slider-year', component_property='value'),
+        Input(component_id=SLIDER_YEAR_ID, component_property='value'),
         Input('bar-chart-monthly', 'selectedData'),
     ])
 def update_stories(selected_year, selected_data):
     """
     update_stories
     """
+    is_year_select = False
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if input_id == SLIDER_YEAR_ID:
+            is_year_select = True
+
     filtered_df = DF[DF['year'] == selected_year]
 
     traces = []
@@ -132,16 +142,21 @@ def update_stories(selected_year, selected_data):
         df_by_type = filtered_df[filtered_df['type'] == i]
         size = df_by_type['days']/np.log(df_by_type['descendants'])
         sizeref = 2.*max(size)/(20.**2)
+        selected_points = None
 
-        selected_points = []
-        if selected_data is not None:
+        if selected_data is not None and is_year_select is False:
             thread_id = selected_data['points'][0]['customdata']
             thread = DF.loc[DF['threadId'] == thread_id]
             thread_type = thread.iloc[0]['type']
             thread_year = thread.iloc[0]['year']
-            if thread_type == i and thread_year == selected_year:
-                thread_index = df_by_type['threadId'].tolist().index(thread_id)
-                selected_points.append(thread_index)
+
+            if thread_year == selected_year:
+                selected_points = []
+
+                if thread_type == i and thread_year == selected_year:
+                    thread_index = df_by_type['threadId'].tolist().index(
+                        thread_id)
+                    selected_points.append(thread_index)
 
         traces.append(go.Scatter(
             x=df_by_type['descendants'],
@@ -181,11 +196,11 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
     """
     create_bar_chart
     """
-    selected_points = []
+    selected_points = None
 
     if thread_id is not None:
         thread_index = df_by_year_month['threadId'].tolist().index(thread_id)
-        selected_points.append(thread_index)
+        selected_points = [thread_index]
 
     return {
         'data': [go.Bar(
@@ -210,7 +225,7 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
     Output('bar-chart-monthly', 'figure'),
     [
         Input('scatter-stories', 'selectedData'),
-        Input(component_id='slider-year', component_property='value'),
+        Input(component_id=SLIDER_YEAR_ID, component_property='value'),
         Input('scatter-stories', 'clickData'),
     ])
 def update_monthly_stories(selected_data, selected_year, click_data):
