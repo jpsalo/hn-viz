@@ -61,6 +61,8 @@ EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 SLIDER_YEAR_ID = 'slider-year'
 INTERMEDIATE_VALUE_ID = 'intermediate-value'
+BAR_CHART_MONTHLY_VOTES_ID = 'bar-chart-monthly-votes'
+BAR_CHART_MONTHLY_COMMENTS_ID = 'bar-chart-monthly-comments'
 
 APP = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 
@@ -109,11 +111,11 @@ APP.layout = html.Div(
             style={'padding': 10},
             children=[
                 dcc.Graph(
-                    id='bar-chart-monthly-votes',
+                    id=BAR_CHART_MONTHLY_VOTES_ID,
                     config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
                 ),
                 dcc.Graph(
-                    id='bar-chart-monthly-comments',
+                    id=BAR_CHART_MONTHLY_COMMENTS_ID,
                     config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
                 ),
             ],
@@ -128,8 +130,8 @@ APP.layout = html.Div(
     Output(component_id='scatter-stories', component_property='figure'),
     [
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
-        Input('bar-chart-monthly-votes', 'selectedData'),
-        Input('bar-chart-monthly-comments', 'selectedData'),
+        Input(BAR_CHART_MONTHLY_VOTES_ID, 'selectedData'),
+        Input(BAR_CHART_MONTHLY_COMMENTS_ID, 'selectedData'),
     ])
 def update_stories(selected_year, selected_data_votes, selected_data_comments):
     """
@@ -324,10 +326,10 @@ def update_monthly_stories(selected_data, selected_year, click_data):
 
 
 @APP.callback(
-    Output('bar-chart-monthly-votes', 'figure'),
+    Output(BAR_CHART_MONTHLY_VOTES_ID, 'figure'),
     [
         Input(INTERMEDIATE_VALUE_ID, 'children'),
-        Input('bar-chart-monthly-comments', 'selectedData'),
+        Input(BAR_CHART_MONTHLY_COMMENTS_ID, 'selectedData'),
     ])
 def update_monthly_stories_votes(intermediate_data_json, selected_data):
     """
@@ -358,10 +360,10 @@ def update_monthly_stories_votes(intermediate_data_json, selected_data):
 
 
 @APP.callback(
-    Output('bar-chart-monthly-comments', 'figure'),
+    Output(BAR_CHART_MONTHLY_COMMENTS_ID, 'figure'),
     [
         Input(INTERMEDIATE_VALUE_ID, 'children'),
-        Input('bar-chart-monthly-votes', 'selectedData'),
+        Input(BAR_CHART_MONTHLY_VOTES_ID, 'selectedData'),
     ])
 def update_monthly_stories_comments(intermediate_data_json, selected_data):
     """
