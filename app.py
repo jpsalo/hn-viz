@@ -111,6 +111,10 @@ APP.layout = html.Div(
                     id='bar-chart-monthly-votes',
                     config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
                 ),
+                dcc.Graph(
+                    id='bar-chart-monthly-comments',
+                    config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
+                ),
             ],
         ),
         # Hidden div inside the app that stores the intermediate value
@@ -197,9 +201,9 @@ def update_stories(selected_year, selected_data):
         }
 
 
-def create_bar_chart(df_by_year_month, year, month, thread_id):
+def create_bar_chart_votes(df_by_year_month, year, month, thread_id):
     """
-    create_bar_chart
+    create_bar_chart_votes
     """
     selected_points = None
 
@@ -220,6 +224,35 @@ def create_bar_chart(df_by_year_month, year, month, thread_id):
                 },
             xaxis={'automargin': True},
             yaxis={'title': 'Votes'},
+            hovermode='closest',
+            clickmode='event+select',
+            ),
+        }
+
+
+def create_bar_chart_comments(df_by_year_month, year, month, thread_id):
+    """
+    create_bar_chart_comments
+    """
+    selected_points = None
+
+    if thread_id is not None:
+        thread_index = df_by_year_month['threadId'].tolist().index(thread_id)
+        selected_points = [thread_index]
+
+    return {
+        'data': [go.Bar(
+            x=df_by_year_month['title'],
+            y=df_by_year_month['descendants'],
+            customdata=df_by_year_month['threadId'],
+            selectedpoints=selected_points,
+        )],
+        'layout': go.Layout(
+            title={
+                'text': f'Stats for {year}/{month}',
+                },
+            xaxis={'automargin': True},
+            yaxis={'title': 'Comments'},
             hovermode='closest',
             clickmode='event+select',
             ),
@@ -274,7 +307,8 @@ def update_monthly_stories(selected_data, selected_year, click_data):
     df_by_year_month = DF[
         (DF['year'] == year) &
         (pd.to_datetime(DF['timestamp']).dt.month == month)
-    ].sort_values('score', ascending=False)
+    ]
+    # ].sort_values('score', ascending=False)
 
     state = {'year': year, 'month': month, 'thread_id': thread_id}
     df_json = df_by_year_month.to_json(date_format='iso', orient='split')
@@ -291,11 +325,30 @@ def update_monthly_stories_votes(intermediate_data_json):
     """
     intermediate_data = json.loads(intermediate_data_json)
     df_by_year_month = pd.read_json(intermediate_data[0], orient='split')
+    df_by_year_month = df_by_year_month.sort_values('score', ascending=False)
     state = intermediate_data[1]
     year = state['year']
     month = state['month']
     thread_id = state['thread_id']
-    return create_bar_chart(df_by_year_month, year, month, thread_id)
+    return create_bar_chart_votes(df_by_year_month, year, month, thread_id)
+
+
+@APP.callback(
+    Output('bar-chart-monthly-comments', 'figure'),
+    [Input('intermediate-value', 'children')])
+def update_monthly_stories_comments(intermediate_data_json):
+    """
+    update_monthly_stories_comments
+    """
+    intermediate_data = json.loads(intermediate_data_json)
+    df_by_year_month = pd.read_json(intermediate_data[0], orient='split')
+    df_by_year_month = df_by_year_month.sort_values(
+        'descendants', ascending=False)
+    state = intermediate_data[1]
+    year = state['year']
+    month = state['month']
+    thread_id = state['thread_id']
+    return create_bar_chart_comments(df_by_year_month, year, month, thread_id)
 
 
 if __name__ == '__main__':
