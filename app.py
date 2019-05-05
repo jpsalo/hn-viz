@@ -128,8 +128,9 @@ APP.layout = html.Div(
     [
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
         Input('bar-chart-monthly-votes', 'selectedData'),
+        Input('bar-chart-monthly-comments', 'selectedData'),
     ])
-def update_stories(selected_year, selected_data):
+def update_stories(selected_year, selected_data_votes, selected_data_comments):
     """
     update_stories
     """
@@ -150,22 +151,28 @@ def update_stories(selected_year, selected_data):
         sizeref = 2.*max(size)/(20.**2)
         # Clear selected points per type
         selected_points = None
+        thread_id = None
 
-        if selected_data is not None and is_year_select is False:
-            thread_id = selected_data['points'][0]['customdata']
-            thread = DF.loc[DF['threadId'] == thread_id]
-            thread_type = thread.iloc[0]['type']
-            thread_year = thread.iloc[0]['year']
+        if is_year_select is False:
+            if selected_data_votes is not None:
+                thread_id = selected_data_votes['points'][0]['customdata']
+            elif selected_data_comments is not None:
+                thread_id = selected_data_comments['points'][0]['customdata']
 
-            if thread_year == selected_year:
-                # Set everything unselected
-                selected_points = []
+            if thread_id is not None:
+                thread = DF.loc[DF['threadId'] == thread_id]
+                thread_type = thread.iloc[0]['type']
+                thread_year = thread.iloc[0]['year']
 
-                if thread_type == i and thread_year == selected_year:
-                    thread_index = df_by_type['threadId'].tolist().index(
-                        thread_id)
-                    # Select
-                    selected_points.append(thread_index)
+                if thread_year == selected_year:
+                    # Set everything unselected
+                    selected_points = []
+
+                    if thread_type == i and thread_year == selected_year:
+                        thread_index = df_by_type['threadId'].tolist().index(
+                            thread_id)
+                        # Select
+                        selected_points.append(thread_index)
 
         traces.append(go.Scatter(
             x=df_by_type['descendants'],
@@ -278,8 +285,8 @@ def update_monthly_stories(selected_data, selected_year, click_data):
         if input_id == SLIDER_YEAR_ID:
             is_year_select = True
 
-    # Change year
-    if is_year_select:
+    # Change year and default
+    if is_year_select or (selected_data is None and click_data is None):
         thread_id = None
         today = datetime.today()
         current_year = today.year
@@ -308,7 +315,6 @@ def update_monthly_stories(selected_data, selected_year, click_data):
         (DF['year'] == year) &
         (pd.to_datetime(DF['timestamp']).dt.month == month)
     ]
-    # ].sort_values('score', ascending=False)
 
     state = {'year': year, 'month': month, 'thread_id': thread_id}
     df_json = df_by_year_month.to_json(date_format='iso', orient='split')
