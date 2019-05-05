@@ -60,6 +60,7 @@ print('memory usage', DF.info(memory_usage='deep'))
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 SLIDER_YEAR_ID = 'slider-year'
+INTERMEDIATE_VALUE_ID = 'intermediate-value'
 
 APP = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLESHEETS)
 
@@ -118,7 +119,7 @@ APP.layout = html.Div(
             ],
         ),
         # Hidden div inside the app that stores the intermediate value
-        html.Div(id='intermediate-value', style={'display': 'none'}),
+        html.Div(id=INTERMEDIATE_VALUE_ID, style={'display': 'none'}),
     ]
 )
 
@@ -267,7 +268,7 @@ def create_bar_chart_comments(df_by_year_month, year, month, thread_id):
 
 
 @APP.callback(
-    Output('intermediate-value', 'children'),
+    Output(INTERMEDIATE_VALUE_ID, 'children'),
     [
         Input('scatter-stories', 'selectedData'),
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
@@ -324,8 +325,11 @@ def update_monthly_stories(selected_data, selected_year, click_data):
 
 @APP.callback(
     Output('bar-chart-monthly-votes', 'figure'),
-    [Input('intermediate-value', 'children')])
-def update_monthly_stories_votes(intermediate_data_json):
+    [
+        Input(INTERMEDIATE_VALUE_ID, 'children'),
+        Input('bar-chart-monthly-comments', 'selectedData'),
+    ])
+def update_monthly_stories_votes(intermediate_data_json, selected_data):
     """
     update_monthly_stories_votes
     """
@@ -335,14 +339,31 @@ def update_monthly_stories_votes(intermediate_data_json):
     state = intermediate_data[1]
     year = state['year']
     month = state['month']
-    thread_id = state['thread_id']
+
+    thread_id = None
+    is_intermediate_value = False
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if input_id == INTERMEDIATE_VALUE_ID:
+            is_intermediate_value = True
+
+    if is_intermediate_value:
+        thread_id = state['thread_id']
+    elif selected_data is not None:
+        thread_id = selected_data['points'][0]['customdata']
+
     return create_bar_chart_votes(df_by_year_month, year, month, thread_id)
 
 
 @APP.callback(
     Output('bar-chart-monthly-comments', 'figure'),
-    [Input('intermediate-value', 'children')])
-def update_monthly_stories_comments(intermediate_data_json):
+    [
+        Input(INTERMEDIATE_VALUE_ID, 'children'),
+        Input('bar-chart-monthly-votes', 'selectedData'),
+    ])
+def update_monthly_stories_comments(intermediate_data_json, selected_data):
     """
     update_monthly_stories_comments
     """
@@ -353,7 +374,21 @@ def update_monthly_stories_comments(intermediate_data_json):
     state = intermediate_data[1]
     year = state['year']
     month = state['month']
-    thread_id = state['thread_id']
+
+    thread_id = None
+    is_intermediate_value = False
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if input_id == INTERMEDIATE_VALUE_ID:
+            is_intermediate_value = True
+
+    if is_intermediate_value:
+        thread_id = state['thread_id']
+    elif selected_data is not None:
+        thread_id = selected_data['points'][0]['customdata']
+
     return create_bar_chart_comments(df_by_year_month, year, month, thread_id)
 
 
