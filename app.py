@@ -370,10 +370,10 @@ def create_bar_chart_votes(df_by_year_month, year, month, thread_id):
         )],
         'layout': go.Layout(
             title={
-                'text': f'Stats for {year}/{month}',
+                'text': f'Most voted ({year}/{month})',
                 },
             xaxis={'automargin': True},
-            yaxis={'title': 'Votes'},
+            yaxis={'showgrid': False},
             hovermode='closest',
             clickmode='event+select',
             ),
@@ -399,10 +399,10 @@ def create_bar_chart_comments(df_by_year_month, year, month, thread_id):
         )],
         'layout': go.Layout(
             title={
-                'text': f'Stats for {year}/{month}',
+                'text': f'Most commented ({year}/{month})',
                 },
             xaxis={'automargin': True},
-            yaxis={'title': 'Comments'},
+            yaxis={'showgrid': False},
             hovermode='closest',
             clickmode='event+select',
             ),
