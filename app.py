@@ -75,10 +75,6 @@ COLORS = {
 
 MARKDOWN_TEXT = '''
 ### Hacker News
-
-Project
-
-Jukka-Pekka Salo
 '''
 
 APP.layout = html.Div(
@@ -87,39 +83,61 @@ APP.layout = html.Div(
         'marginRight': '1em',
         'backgroundColor': COLORS['background'],
     },
+    className="row",
     children=[
-        dcc.Markdown(children=MARKDOWN_TEXT),
+        html.Div([
+            dcc.Markdown(children=MARKDOWN_TEXT)
+        ], className="row", style={'textAlign': 'center'}),
+
         html.Div(
-            style={'padding': 10},
             children=[
-                dcc.Graph(
-                    id='scatter-stories',
-                    config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
-                ),
-                dcc.Slider(
-                    id=SLIDER_YEAR_ID,
-                    min=DF['year'].min(),
-                    max=DF['year'].max(),
-                    value=DF['year'].max(),
-                    marks={
-                        str(year): str(year) for year in DF['year'].unique()
-                    },
-                ),
-            ],
+                html.Div([
+                    dcc.Graph(
+                        id='scatter-stories',
+                        config={
+                            'modeBarButtonsToRemove': ['select2d', 'lasso2d']
+                        },
+                    ),
+                ], className="row"),
+
+                html.Div([
+                    dcc.Slider(
+                        id=SLIDER_YEAR_ID,
+                        min=DF['year'].min(),
+                        max=DF['year'].max(),
+                        value=DF['year'].max(),
+                        marks={
+                            str(year): str(year) for year in DF[
+                                'year'].unique()
+                        },
+                    ),
+                ], className="row", style={'height': '50px'}),
+            ], className="row",
         ),
+
         html.Div(
-            style={'padding': 10},
             children=[
-                dcc.Graph(
-                    id=BAR_CHART_MONTHLY_VOTES_ID,
-                    config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
-                ),
-                dcc.Graph(
-                    id=BAR_CHART_MONTHLY_COMMENTS_ID,
-                    config={'modeBarButtonsToRemove': ['select2d', 'lasso2d']},
-                ),
+                html.Div([
+                    dcc.Graph(
+                        id=BAR_CHART_MONTHLY_VOTES_ID,
+                        config={
+                            'modeBarButtonsToRemove': ['select2d', 'lasso2d']
+                        },
+                    )
+                ], className="six columns"),
+
+                html.Div([
+                    dcc.Graph(
+                        id=BAR_CHART_MONTHLY_COMMENTS_ID,
+                        config={
+                            'modeBarButtonsToRemove': ['select2d', 'lasso2d']
+                        },
+                    ),
+                ], className="six columns"),
             ],
+            className="row",
         ),
+
         # Hidden div inside the app that stores the intermediate value
         html.Div(id=INTERMEDIATE_VALUE_ID, style={'display': 'none'}),
     ]
@@ -207,8 +225,6 @@ def update_stories(selected_year, selected_data_votes, selected_data_comments):
         'layout': go.Layout(
             xaxis={'type': 'log', 'title': 'Comments'},
             yaxis={'title': 'Votes'},
-            # FIXME
-            margin={'l': 40, 'b': 40, 't': 10, 'r': 10},
             showlegend=True,
             clickmode='event+select',
             legend={'x': 0, 'y': 1},
