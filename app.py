@@ -3,6 +3,7 @@
 from datetime import datetime
 import os
 import json
+import textwrap
 import numpy as np
 import pandas as pd
 import dash
@@ -59,6 +60,7 @@ print('memory usage', DF.info(memory_usage='deep'))
 
 EXTERNAL_STYLESHEETS = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+SCATTER_STORIES_ID = 'scatter-stories'
 SLIDER_YEAR_ID = 'slider-year'
 INTERMEDIATE_VALUE_ID = 'intermediate-value'
 BAR_CHART_MONTHLY_VOTES_ID = 'bar-chart-monthly-votes'
@@ -93,7 +95,7 @@ APP.layout = html.Div(
             children=[
                 html.Div([
                     dcc.Graph(
-                        id='scatter-stories',
+                        id=SCATTER_STORIES_ID,
                         config={
                             'modeBarButtonsToRemove': ['select2d', 'lasso2d']
                         },
@@ -139,6 +141,16 @@ APP.layout = html.Div(
             className="row",
         ),
 
+        html.Div(
+            id='story-metadata-container',
+            style={'display': 'none'},
+            children=[
+                dcc.Markdown(
+                    id='story-metadata',
+                ),
+            ],
+        ),
+
         # Hidden div inside the app that stores the intermediate value
         html.Div(id=INTERMEDIATE_VALUE_ID, style={'display': 'none'}),
     ]
@@ -146,7 +158,112 @@ APP.layout = html.Div(
 
 
 @APP.callback(
-    Output(component_id='scatter-stories', component_property='figure'),
+    Output('story-metadata-container', 'style'),
+    [
+        Input(SCATTER_STORIES_ID, 'selectedData'),
+        Input(BAR_CHART_MONTHLY_VOTES_ID, 'selectedData'),
+        Input(BAR_CHART_MONTHLY_COMMENTS_ID, 'selectedData'),
+        Input(SLIDER_YEAR_ID, 'value'),
+    ])
+def toggle_story_metadata(stories, votes, comments, *_):
+    """
+    toggle_story_metadata
+    """
+    is_visible = False
+
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if input_id == SCATTER_STORIES_ID and stories is not None:
+            is_visible = True
+        elif input_id == BAR_CHART_MONTHLY_VOTES_ID and votes is not None:
+            is_visible = True
+        elif (
+                input_id == BAR_CHART_MONTHLY_COMMENTS_ID and
+                comments is not None):
+            is_visible = True
+
+    return {'display': 'block' if is_visible else 'none'}
+
+
+@APP.callback(
+    Output('story-metadata', 'children'),
+    [
+        Input(SCATTER_STORIES_ID, 'selectedData'),
+        Input(BAR_CHART_MONTHLY_VOTES_ID, 'selectedData'),
+        Input(BAR_CHART_MONTHLY_COMMENTS_ID, 'selectedData'),
+    ])
+def update_story_metadata(
+        selected_data_stories,
+        selected_data_votes,
+        selected_data_comments):
+    """
+    update_story_metadata
+    """
+
+    is_stories_select = False
+    is_votes_select = False
+    is_comments_select = False
+    ctx = dash.callback_context
+
+    if ctx.triggered:
+        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        if input_id == SCATTER_STORIES_ID:
+            is_stories_select = True
+        elif input_id == BAR_CHART_MONTHLY_VOTES_ID:
+            is_votes_select = True
+        elif input_id == BAR_CHART_MONTHLY_COMMENTS_ID:
+            is_comments_select = True
+
+    selected_story = None
+
+    if is_stories_select and selected_data_stories is not None:
+        selected_story = selected_data_stories
+    elif is_votes_select and selected_data_votes is not None:
+        selected_story = selected_data_votes
+    elif is_comments_select and selected_data_comments is not None:
+        selected_story = selected_data_comments
+
+    if selected_story is None:
+        return None
+
+    thread_id = selected_story['points'][0]['customdata']
+    thread = DF.loc[DF['threadId'] == thread_id].iloc[0]
+    title = thread['title']
+    url = f'https://news.ycombinator.com/item?id={thread_id}'
+    author = thread['author']
+    thread_type = thread['type']
+    timestamp = thread['timestamp']
+    votes = thread['score']
+    comments = thread['descendants']
+    duration = thread['days']
+
+    text = f'''
+    ### Selection
+    **Title:** {title}
+
+    **Author:** {author}
+
+    **Type:** {thread_type}
+
+    **Posted:** {timestamp.strftime('%c')}
+
+    **Votes:** {votes}
+
+    **Comments:** {comments}
+
+    **Duration:** {duration} days
+
+    **Link:** {url}
+    '''
+
+    # https://community.plot.ly/t/using-markdowns-in-callbacks/15063/3
+    return textwrap.dedent(text)
+
+
+@APP.callback(
+    Output(component_id=SCATTER_STORIES_ID, component_property='figure'),
     [
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
         Input(BAR_CHART_MONTHLY_VOTES_ID, 'selectedData'),
@@ -295,9 +412,9 @@ def create_bar_chart_comments(df_by_year_month, year, month, thread_id):
 @APP.callback(
     Output(INTERMEDIATE_VALUE_ID, 'children'),
     [
-        Input('scatter-stories', 'selectedData'),
+        Input(SCATTER_STORIES_ID, 'selectedData'),
         Input(component_id=SLIDER_YEAR_ID, component_property='value'),
-        Input('scatter-stories', 'clickData'),
+        Input(SCATTER_STORIES_ID, 'clickData'),
     ])
 def update_monthly_stories(selected_data, selected_year, click_data):
     """
