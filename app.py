@@ -112,6 +112,7 @@ APP.layout = html.Div(
                         },
                     ),
                 ], className="row", style={'height': '50px'}),
+                # https://community.plot.ly/t/slider-height-seems-to-be-zero/6745/2
             ], className="row",
         ),
 
